@@ -1,0 +1,27 @@
+@MinimalApiJwt_HostAddress = https://localhost:7277
+
+@tenantId = tenantId
+@clientId = clinetId
+@clientSecret = clientSecret
+@scope = api://client/.default
+@tokenEndpoint = https://login.microsoftonline.com/{{tenantId}}/oauth2/v2.0/token
+@resourceEndpoint = {{MinimalApiJwt_HostAddress}}/api/weather-forecasts
+
+### Get Token
+# @name getToken
+POST {{tokenEndpoint}}
+Content-Type: application/x-www-form-urlencoded
+
+client_id={{clientId}}&client_secret={{clientSecret}}&scope={{scope}}&grant_type=client_credentials
+
+### Use Token
+@accessToken = {{getToken.response.body.access_token}}
+GET {{resourceEndpoint}}
+Authorization: Bearer {{accessToken}}
+
+###
+# Curl
+# curl -X POST https://login.microsoftonline.com/288313b1-6ad2-4ee1-9557-6bf3dbed703d/oauth2/v2.0/token -H "Content-Type: application/x-www-form-urlencoded" -d "client_id=&client_secret=&scope=api:///.default&grant_type=client_credentials"
+# curl -X GET "https://localhost:7277/api/weather-forecasts" -H "Authorization: Bearer " -H "Accept: application/json"
+
+# https://learn.microsoft.com/en-us/aspnet/core/test/http-files?view=aspnetcore-9.0
