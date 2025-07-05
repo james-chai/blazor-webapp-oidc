@@ -1,27 +1,40 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Auth0
 builder.Services.AddAuthentication()
     .AddJwtBearer("Bearer", jwtOptions =>
     {
-        // {TENANT ID} is the directory (tenant) ID.
-        //
-        // Authority format {AUTHORITY} matches the issurer (`iss`) of the JWT returned by the identity provider.
-        //
-        // Authority format {AUTHORITY} for ME-ID tenant type: https://sts.windows.net/{TENANT ID}/
-        // Authority format {AUTHORITY} for B2C tenant type: https://login.microsoftonline.com/{TENANT ID}/v2.0/
-        //
-        jwtOptions.Authority = "https://sts.windows.net/288313b1-6ad2-4ee1-9557-6bf3dbed703d/";
-        //
-        // The following should match just the path of the Application ID URI configured when adding the "Weather.Get" scope
-        // under "Expose an API" in the Azure or Entra portal. {CLIENT ID} is the application (client) ID of this 
-        // app's registration in the Azure portal.
-        // 
-        // Audience format {AUDIENCE} for ME-ID tenant type: api://{CLIENT ID}
-        // Audience format {AUDIENCE} for B2C tenant type: https://{DIRECTORY NAME}.onmicrosoft.com/{CLIENT ID}
-        //
-        jwtOptions.Audience = "api://6f4685ed-3434-4678-b6d4-0f7bac089b6a";
+        jwtOptions.Authority = "https://dev-bzwlsiu3dyya07ov.au.auth0.com/";
+        jwtOptions.Audience = "https://localhost:7277";
+
+        jwtOptions.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            // Auth0 uses standard OIDC claim names
+            NameClaimType = "name",
+            RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        };
+
+        // Optional: Debugging events
+        jwtOptions.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"Authentication failed: {context.Exception}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("Token validated successfully");
+                return Task.CompletedTask;
+            }
+        };
     });
 builder.Services.AddAuthorization();
 

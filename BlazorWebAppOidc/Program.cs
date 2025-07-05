@@ -9,12 +9,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
-const string MS_OIDC_SCHEME = "MicrosoftOidc";
+const string AUTH0_SCHEME = "Auth0";
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddAuthentication(MS_OIDC_SCHEME)
-    .AddOpenIdConnect(MS_OIDC_SCHEME, options => ConfigureOpenIdConnect(options, builder.Configuration))
+builder.Services.AddAuthentication(AUTH0_SCHEME)
+    .AddOpenIdConnect(AUTH0_SCHEME, options => ConfigureOpenIdConnect(options, builder.Configuration))
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme);
 
 // ConfigureCookieOidc attaches a cookie OnValidatePrincipal callback to get
@@ -22,7 +22,7 @@ builder.Services.AddAuthentication(MS_OIDC_SCHEME)
 // new access token saved inside. If the refresh fails, the user will be signed
 // out. OIDC connect options are set for saving tokens and the offline access
 // scope.
-builder.Services.ConfigureCookieOidc(CookieAuthenticationDefaults.AuthenticationScheme, MS_OIDC_SCHEME);
+builder.Services.ConfigureCookieOidc(CookieAuthenticationDefaults.AuthenticationScheme, AUTH0_SCHEME);
 
 builder.Services.AddAuthorization();
 
@@ -81,7 +81,7 @@ app.Run();
 
 static void ConfigureOpenIdConnect(OpenIdConnectOptions options, IConfiguration configuration)
 {
-    var oidcConfig = configuration.GetSection("Authentication:Schemes:MicrosoftOidc");
+    var oidcConfig = configuration.GetSection("Authentication:Schemes:Auth0");
 
     // ........................................................................
     // The OIDC handler must use a sign-in scheme capable of persisting 
@@ -89,21 +89,15 @@ static void ConfigureOpenIdConnect(OpenIdConnectOptions options, IConfiguration 
     options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     // ........................................................................
 
-    // The following example Authority is configured for Microsoft Entra ID
-    // and a single-tenant application registration. Set the {TENANT ID} 
-    // placeholder to the Tenant ID. The "common" Authority 
-    // https://login.microsoftonline.com/common/v2.0/ should be used 
-    // for multi-tenant apps. You can also use the "common" Authority for 
-    // single-tenant apps, but it requires a custom IssuerValidator as shown 
-    // in the comments below. 
-    options.Authority = oidcConfig["Authority"];
-    // ........................................................................
+    options.Authority = oidcConfig["Domain"];
 
     // Set the Client ID for the app. Set the {CLIENT ID} placeholder to
     // the Client ID.
     options.ClientId = oidcConfig["ClientId"];
     options.ClientSecret = oidcConfig["ClientSecret"];
     // ........................................................................
+
+    options.TokenValidationParameters.ValidateAudience = false;
 
     // Setting ResponseType to "code" configures the OIDC handler to use 
     // authorization code flow. Implicit grants and hybrid flows are unnecessary
@@ -121,18 +115,7 @@ static void ConfigureOpenIdConnect(OpenIdConnectOptions options, IConfiguration 
 
     options.MapInboundClaims = false;
     options.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
-    options.TokenValidationParameters.RoleClaimType = "roles";
-    // ........................................................................
-
-    // ........................................................................
-    // Many OIDC providers work with the default issuer validator, but the
-    // configuration must account for the issuer parameterized with "{TENANT ID}" 
-    // returned by the "common" endpoint's /.well-known/openid-configuration
-    // For more information, see
-    // https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet/issues/1731
-
-    //var microsoftIssuerValidator = AadIssuerValidator.GetAadIssuerValidator(oidcOptions.Authority);
-    //oidcOptions.TokenValidationParameters.IssuerValidator = microsoftIssuerValidator.Validate;
+    options.TokenValidationParameters.RoleClaimType = "role";
     // ........................................................................
 
     // ........................................................................
@@ -155,6 +138,28 @@ static void ConfigureOpenIdConnect(OpenIdConnectOptions options, IConfiguration 
     }
     // ........................................................................
 
+    // Add audience parameter for API access
+    options.Events = new OpenIdConnectEvents
+    {
+        OnRedirectToIdentityProvider = context =>
+        {
+            // Add audience parameter for API access
+            if (!string.IsNullOrEmpty(oidcConfig["Audience"]))
+            {
+                context.ProtocolMessage.SetParameter("audience", oidcConfig["Audience"]);
+            }
+
+            // Force HTTPS in production
+            if (!context.ProtocolMessage.RedirectUri.Contains("localhost"))
+            {
+                context.ProtocolMessage.RedirectUri =
+                    context.ProtocolMessage.RedirectUri.Replace("http://", "https://");
+            }
+
+            return Task.CompletedTask;
+        }
+    };
+
     // ........................................................................
     // The following paths must match the redirect and post logout redirect 
     // paths configured when registering the application with the OIDC provider. 
@@ -168,23 +173,4 @@ static void ConfigureOpenIdConnect(OpenIdConnectOptions options, IConfiguration 
     // sign-out. The default value is "/signout-oidc".
     options.RemoteSignOutPath = new PathString(oidcConfig["RemoteSignOutPath"]);
     // ........................................................................
-
-    // Token validation
-    //options.TokenValidationParameters = new()
-    //{
-    //    NameClaimType = "name",
-    //    RoleClaimType = "roles",
-    //    ValidateIssuer = true
-    //};
-
-    // Optional: Add event handlers if needed
-    //options.Events = new OpenIdConnectEvents
-    //{
-    //    OnAuthenticationFailed = context =>
-    //    {
-    //        context.Response.Redirect("/error");
-    //        context.HandleResponse();
-    //        return Task.CompletedTask;
-    //    }
-    //};
 }

@@ -17,8 +17,28 @@ internal static class LoginLogoutEndpointRouteBuilderExtensions
         // Sign out of the Cookie and OIDC handlers. If you do not sign out with the OIDC handler,
         // the user will automatically be signed back in the next time they visit a page that requires authentication
         // without being able to choose another account.
-        group.MapPost("/logout", ([FromForm] string? returnUrl) => TypedResults.SignOut(GetAuthProperties(returnUrl, true),
-            [CookieAuthenticationDefaults.AuthenticationScheme, "MicrosoftOidc"]));
+        group.MapPost("/logout", async (
+            [FromForm] string? returnUrl,
+            HttpContext context,
+            IConfiguration config) =>
+        {
+            // Local application sign-out
+            await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            var auth0Config = config.GetSection("Authentication:Schemes:Auth0");
+            var domain = auth0Config["Domain"];
+
+            var request = context.Request;
+            returnUrl = $"{request.Scheme}://{request.Host}";
+
+            // Auth0 federated logout URL
+            var logoutUrl = $"{auth0Config["Domain"]}v2/logout?" +
+                $"client_id={auth0Config["ClientId"]}&" +
+                $"returnTo={Uri.EscapeDataString(returnUrl)}";
+
+            // Redirect to Auth0 for global sign-out
+            return Results.Redirect(logoutUrl);
+        });
 
         return group;
     }
