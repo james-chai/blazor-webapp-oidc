@@ -8,10 +8,6 @@ This app is a customized version of a Microsoft sample project, enhanced with ad
 * Automatic non-interactive token refresh with the help of a custom `CookieOidcRefresher`.
 * Secure web API call for weather data to a separate web API project. The access token is obtained from the server-side `HttpContext` and attached to outgoing requests with a custom `DelegatingHandler` service.
 
-## Article for this app
-
-The article for this sample app is [Secure an ASP.NET Core Blazor Web App with OpenID Connect (OIDC)](https://learn.microsoft.com/aspnet/core/blazor/security/blazor-web-app-with-oidc?pivots=non-bff-pattern).
-
 ## Configure Me-ID
 
 Configure the OIDC provider in the `Program.cs` file.

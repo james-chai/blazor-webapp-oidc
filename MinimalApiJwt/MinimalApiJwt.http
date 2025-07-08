@@ -1,9 +1,7 @@
+@env = dev
+
 @MinimalApiJwt_HostAddress = https://localhost:7277
 
-@tenantId = tenantId
-@clientId = clinetId
-@clientSecret = clientSecret
-@scope = api://client/.default
 @tokenEndpoint = https://login.microsoftonline.com/{{tenantId}}/oauth2/v2.0/token
 @resourceEndpoint = {{MinimalApiJwt_HostAddress}}/api/weather-forecasts
 
@@ -12,7 +10,7 @@
 POST {{tokenEndpoint}}
 Content-Type: application/x-www-form-urlencoded
 
-client_id={{clientId}}&client_secret={{clientSecret}}&scope={{scope}}&grant_type=client_credentials
+client_id={{clientId}}&client_secret={{clientSecret}}&scope=api://{{clientId}}/.default&grant_type=client_credentials
 
 ### Use Token
 @accessToken = {{getToken.response.body.access_token}}

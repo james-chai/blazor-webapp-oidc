@@ -1,0 +1,68 @@
+{
+   "version": "2.0.0",
+   "tasks": [
+       {
+           "label": "build-blazor",
+           "command": "dotnet",
+           "type": "process",
+           "args": [
+               "build",
+               "${workspaceFolder}/BlazorWebAppOidc/BlazorWebAppOidc.csproj",
+               "/property:GenerateFullPaths=true",
+               "/consoleloggerparameters:NoSummary"
+           ],
+           "problemMatcher": "$msCompile"
+       },
+       {
+           "label": "publish-blazor",
+           "command": "dotnet",
+           "type": "process",
+           "args": [
+               "publish",
+               "${workspaceFolder}/BlazorWebAppOidc/BlazorWebAppOidc.csproj",
+               "/property:GenerateFullPaths=true",
+               "/consoleloggerparameters:NoSummary"
+           ],
+           "problemMatcher": "$msCompile"
+       },
+       {
+           "label": "watch",
+           "command": "dotnet",
+           "type": "process",
+           "args": [
+               "watch",
+               "run",
+               "--project",
+               "${workspaceFolder}/BlazorWebAppOidc/BlazorWebAppOidc.csproj"
+           ],
+           "options" : {
+               "cwd": "${workspaceFolder}/BlazorWebAppOidc"
+           },
+           "problemMatcher": "$msCompile"
+       },
+       {
+           "label": "build-api",
+           "command": "dotnet",
+           "type": "process",
+           "args": [
+               "build",
+               "${workspaceFolder}/MinimalApiJwt/MinimalApiJwt.csproj",
+               "/property:GenerateFullPaths=true",
+               "/consoleloggerparameters:NoSummary"
+           ],
+           "problemMatcher": "$msCompile"
+       },
+       {
+           "label": "publish-api",
+           "command": "dotnet",
+           "type": "process",
+           "args": [
+               "publish",
+               "${workspaceFolder}/MinimalApiJwt/MinimalApiJwt.csproj",
+               "/property:GenerateFullPaths=true",
+               "/consoleloggerparameters:NoSummary"
+           ],
+           "problemMatcher": "$msCompile"
+       },
+   ]
+}
